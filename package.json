@@ -1,0 +1,23 @@
+{
+  "name": "seal-slide-extractor",
+  "version": "1.0.0",
+  "description": "Exports images of seals from converted PPTX slides",
+  "main": "images.js",
+  "dependencies": {},
+  "devDependencies": {
+    "fs": "0.0.1-security",
+    "fs-extra": "^6.0.1",
+    "path": "^0.12.7",
+    "process": "^0.11.10",
+    "rimraf": "^2.6.2",
+    "xml2json": "^0.11.2"
+  },
+  "scripts": {
+    "extract-text": "node -e 'require(\"./images.js\").extractSlideText()'",
+    "process-slides": "node -e 'require(\"./images.js\").collateImagesFromSlides()'",
+    "rename-images": "node -e 'require(\"./images.js\").renameImages()'",
+    "rename-slides": "node -e 'require(\"./images.js\").renameSlides()'"
+  },
+  "author": "Richard Frost",
+  "license": "ISC"
+}
