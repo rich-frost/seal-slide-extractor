@@ -16,7 +16,8 @@
     "extract-text": "node -e 'require(\"./images.js\").extractSlideText()'",
     "process-slides": "node -e 'require(\"./images.js\").collateImagesFromSlides()'",
     "rename-images": "node -e 'require(\"./images.js\").renameImages()'",
-    "rename-slides": "node -e 'require(\"./images.js\").renameSlides()'"
+    "rename-slides": "node -e 'require(\"./images.js\").renameSlides()'",
+    "extract-images-from-slides": "node -e 'require(\"./bulk-ppt-extractor.js\").processPPTs()'"
   },
   "author": "Richard Frost",
   "license": "ISC"

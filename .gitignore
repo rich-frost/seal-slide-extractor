@@ -2,3 +2,5 @@
 node_modules/
 slides/
 output/
+ppts/
+extracted-ppt-output/
