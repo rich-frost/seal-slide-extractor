@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Exports images of seals from converted PPTX slides",
   "main": "images.js",
-  "dependencies": {},
+  "dependencies": {
+    "jimp": "^0.6.4"
+  },
   "devDependencies": {
     "fs": "0.0.1-security",
     "fs-extra": "^6.0.1",
@@ -17,7 +19,7 @@
     "process-slides": "node -e 'require(\"./images.js\").collateImagesFromSlides()'",
     "rename-images": "node -e 'require(\"./images.js\").renameImages()'",
     "rename-slides": "node -e 'require(\"./images.js\").renameSlides()'",
-    "extract-images-from-slides": "node -e 'require(\"./bulk-ppt-extractor.js\").processPPTs()'"
+    "bulk-ppt-extractor": "node -e 'require(\"./bulk-ppt-extractor.js\").processPPTs()'"
   },
   "author": "Richard Frost",
   "license": "ISC"

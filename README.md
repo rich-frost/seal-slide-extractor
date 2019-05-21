@@ -19,10 +19,16 @@ It outputs the PPTX into a `ppt` folder that includes slides and the images. Mov
 
 If you have a number of PPT presentations, each is for an individual seal; use this script.
 
-Put your PPTs in the `ppts/to-process` folder and run `npm run extract-images-from-slides`.
+Put your PPTs in the `ppts/to-process` folder and run `npm run bulk-ppt-extractor`.
 This will create a separate folder for each PPT using the filename as the folder with all the images from that PPT into the folder. The folders will be created in the `extracted-ppt-output` folder.
 
 Be aware, if you re-run the script it will remove anything in the output `extracted-ppt-output` folder.
+
+### Rotate images
+
+Once you have extracted the images from the Bulk PPT Extractor, you can run a script that will copy the images into the `rotated-images/` folder and go through them all and rotate each image - 10 degrees to the left, and 10 degrees to the right - giving you 21 images per seal.
+
+This can be run by running `node rotate-images.js`
 
 ### Other scripts
 
