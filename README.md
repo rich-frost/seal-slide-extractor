@@ -37,4 +37,5 @@ Checkout the `package.json`. The other scripts are:
 - `npm run rename-images` : this will rename images to make sure they are numerically ordered
 - `npm run rename-slides` : this will rename slides to make sure they are numerically ordered
 - `npm run extract-text` : this extracts the text from all slides so we know what's in them
+- `npm run find-title-slides` : this loops through all the slides and logs all slides where there is text and no images found in the slide
 - `npm run process-slides` : this will process all the slides and output the images from each slide into a relevant folder based on the title slide

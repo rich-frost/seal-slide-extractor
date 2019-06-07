@@ -7,22 +7,15 @@ the name of the seal. All following slides then contained images of that seal.
 This scipt would use the different functions to extract all the images then
 work out which slides were for which seal based on the location of the title slides.
 
-It could do with going over again, or re-written as I can't remember the exact
-functionality used on the PPT that was 8GB.
 */
 
 const fs = require("fs");
-const fsExtra = require("fs-extra");
-const path = require("path");
-// In newer Node.js versions where process is already global this isn't necessary.
-const process = require("process");
 const parser = require("xml2json");
 const rimraf = require("rimraf");
 
 const baseSlideDir = "./slides/slides/";
-const baseImageDir = "./slides/images/";
+const baseImageDir = "./slides/media/";
 
-const slideDir = "./slides/formatted-slides/";
 const imagesDir = "./slides/formatted-images/";
 const outputDir = "./output/";
 
@@ -50,10 +43,10 @@ const renameSlides = () => {
   fs.readdir(baseSlideDir, function(err, files) {
     files.forEach(function(file, index) {
       const formattedNum = convertNumber(file);
-
+      const ext = "xml";
       fs.rename(
         baseSlideDir + file,
-        slideDir + "slide" + formattedNum + "." + ext,
+        baseSlideDir + "slide" + formattedNum + "." + ext,
         function(err) {
           if (err) console.log("ERROR: " + err);
         }
@@ -77,9 +70,10 @@ const renameImages = () => {
 
 // Loop through all the slide files - this will output all text; some are maybe wrong
 const extractSlideText = () => {
-  fs.readdir(slideDir, function(err, files) {
+  fs.readdir(baseSlideDir, function(err, files) {
     files.forEach(function(file, index) {
-      fs.readFile(slideDir + file, "utf8", function(err, data) {
+      fs.readFile(baseSlideDir + file, "utf8", function(err, data) {
+        if (!data) return;
         const json = JSON.parse(parser.toJson(data));
 
         try {
@@ -97,66 +91,122 @@ const extractSlideText = () => {
   });
 };
 
-// Loop through all the slide files - this will output all text; some are maybe wrong
-const collateImagesFromSlides = () => {
-  fs.readdir(slideDir, function(err, files) {
-    let currentSeal = "";
-    let picCounter = 0;
+// Loop through all the slide files and output the title slides with slide number
+const findTitleSlides = () => {
+  let previousTitle = {};
+  const files = fs.readdirSync(baseSlideDir);
+  files.forEach(function(file, index) {
+    const filename = baseSlideDir + file;
+    if (!fs.lstatSync(filename).isDirectory()) {
+      const data = fs.readFileSync(filename, "utf8");
 
-    files.forEach(function(file, index) {
-      fs.readFile(slideDir + file, "utf8", function(err, data) {
-        const json = JSON.parse(parser.toJson(data));
-
+      if (data && data.indexOf("p:pic") === -1) {
         try {
-          // Work out if this is a title slide
+          const regex = new RegExp(/<a:t>([\s\S]*?)<\/a:t>/);
+          const title = regex.exec(data)[1];
 
-          const title =
-            json["p:sld"]["p:cSld"]["p:spTree"]["p:sp"][0]["p:txBody"]["a:p"][
-              "a:r"
-            ]["a:t"];
-          const pics = json["p:sld"]["p:cSld"]["p:spTree"]["p:pic"];
-
-          // If there are no pics then we'll assume this is a definitive title slide
-          if (!pics) {
-            console.warn(file, title);
-            currentSeal = title.replace(" ", "_");
+          if (Object.keys(previousTitle).length > 0) {
+            console.warn(
+              "Previous",
+              previousTitle.title,
+              previousTitle.index + 1,
+              index - 1
+            );
           }
-          try {
-            fs.mkdirSync(outputDir + currentSeal);
-          } catch (e) {}
-        } catch (e) {
-          if (file === "slide0653.xml") {
-            console.warn(e);
-          }
-          // Is not a title slide, so must show seals
-          try {
-            const pics = json["p:sld"]["p:cSld"]["p:spTree"]["p:pic"];
-
-            const imageFiles = fs.readdirSync(imagesDir);
-
-            for (let i = 0; i < pics.length; i++) {
-              fsExtra.copySync(
-                imagesDir + imageFiles[picCounter],
-                "./output/" + currentSeal + "/" + imageFiles[picCounter]
-              );
-              picCounter++;
-            }
-          } catch (e) {
-            if (file === "slide0653.xml") {
-              console.warn(e);
-            }
-
-            console.warn(file, "cant find any photos, not sure what to do");
-          }
-        }
-      });
-    });
+          previousTitle = { title, index, file };
+        } catch (e) {}
+      }
+    }
   });
+};
+
+// Loop through all the slide files, find the titles and work out the slides
+// in between. Then process each slide xml file to extract the images referenced
+// in them. Fetch them and save them to the output folders
+const extractImagesFromSlides = () => {
+  let previousTitle = {};
+  let seals = [];
+  const files = fs.readdirSync(baseSlideDir);
+  files.forEach(function(file, index) {
+    const filename = baseSlideDir + file;
+    if (!fs.lstatSync(filename).isDirectory()) {
+      const data = fs.readFileSync(filename, "utf8");
+
+      if (data && data.indexOf("p:pic") === -1) {
+        try {
+          const regex = new RegExp(/<a:t>([\s\S]*?)<\/a:t>/);
+          const title = regex.exec(data)[1];
+
+          if (Object.keys(previousTitle).length > 0) {
+            seals.push({
+              seal: previousTitle.title,
+              start: previousTitle.index + 1,
+              end: index
+            });
+          }
+          previousTitle = { title, index, file };
+          //console.warn(file, title);
+        } catch (e) {}
+      }
+    }
+  });
+
+  seals.forEach(seal => {
+    getImagesForTheSeal(seal);
+  });
+};
+
+const getImagesForTheSeal = ({ seal, start, end }) => {
+  let index = 1;
+
+  //Create a folder for the seal
+  const sealFolder = outputDir + seal;
+  if (!fs.existsSync(sealFolder)) {
+    fs.mkdirSync(sealFolder);
+  } else {
+    fs.readdirSync(sealFolder, (err, files) => {
+      index = files.length;
+    });
+  }
+
+  // Read each slide res file and read the images found
+  for (let i = start; i < end; i++) {
+    const data = fs.readFileSync(
+      "./slides/slides/slide.xml/slide" + i + ".xml.rels",
+      "utf8"
+    );
+
+    const regex = /Target="..\/media([\s\S]*?)"/g;
+    while ((m = regex.exec(data)) !== null) {
+      // This is necessary to avoid infinite loops with zero-width matches
+      if (m.index === regex.lastIndex) {
+        regex.lastIndex++;
+      }
+      const image = m[0].replace('Target="../media/', "").replace('"', "");
+      const file = "./slides/media/" + image;
+
+      if (fs.existsSync(file)) {
+        const extDot = file.lastIndexOf(".");
+        const ext = file.substr(extDot);
+        fs.renameSync(file, sealFolder + "/" + seal + "-" + index + ext);
+        console.log(
+          i,
+          index,
+          seal,
+          file,
+          sealFolder + "/" + seal + "-" + index + ext
+        );
+
+        index += 1;
+      }
+    }
+  }
 };
 
 module.exports = {
   renameSlides,
   renameImages,
   extractSlideText,
-  collateImagesFromSlides
+  extractImagesFromSlides,
+  findTitleSlides
 };
