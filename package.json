@@ -4,7 +4,7 @@
   "description": "Exports images of seals from converted PPTX slides",
   "main": "images.js",
   "dependencies": {
-    "jimp": "^0.6.4"
+    "jimp": "^0.22.7"
   },
   "devDependencies": {
     "fs": "0.0.1-security",
